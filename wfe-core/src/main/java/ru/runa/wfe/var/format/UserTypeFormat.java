@@ -14,6 +14,8 @@ import ru.runa.wfe.user.User;
 import ru.runa.wfe.var.UserType;
 import ru.runa.wfe.var.UserTypeMap;
 import ru.runa.wfe.var.VariableDefinition;
+import ru.runa.wfe.var.dto.RenderParameters;
+import ru.runa.wfe.var.dto.RenderParameters.DisplayType;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
@@ -97,7 +99,8 @@ public class UserTypeFormat extends VariableFormat implements VariableDisplaySup
     }
 
     @Override
-    public String formatHtml(User user, WebHelper webHelper, Long processId, String name, Object object) {
+    public String formatHtml(User user, WebHelper webHelper, Long processId, String name, Object object, RenderParameters renderParameters) {
+        renderParameters.setDisplayType(DisplayType.BLOCK);
         UserTypeMap userTypeMap = (UserTypeMap) object;
         StringBuffer b = new StringBuffer();
         b.append("<table class=\"list usertype\">");
@@ -112,7 +115,8 @@ public class UserTypeFormat extends VariableFormat implements VariableDisplaySup
                 if (attributeFormat instanceof VariableDisplaySupport) {
                     String childName = name + UserType.DELIM + attributeDefinition.getName();
                     try {
-                        value = ((VariableDisplaySupport) attributeFormat).formatHtml(user, webHelper, processId, childName, attributeValue);
+                        value = ((VariableDisplaySupport) attributeFormat).formatHtml(user, webHelper, processId, childName, attributeValue,
+                                new RenderParameters());
                     } catch (Exception e) {
                         throw new InternalApplicationException(attributeDefinition.getName(), e);
                     }

@@ -2,6 +2,8 @@ package ru.runa.wfe.var.format;
 
 import ru.runa.wfe.commons.web.WebHelper;
 import ru.runa.wfe.user.User;
+import ru.runa.wfe.var.dto.RenderParameters;
+import ru.runa.wfe.var.dto.RenderParameters.DisplayType;
 import ru.runa.wfe.var.dto.WfVariable;
 
 public class HiddenFormat extends VariableFormat implements VariableInputSupport, VariableDisplaySupport {
@@ -33,7 +35,8 @@ public class HiddenFormat extends VariableFormat implements VariableInputSupport
     }
 
     @Override
-    public String formatHtml(User user, WebHelper webHelper, Long processId, String name, Object object) {
+    public String formatHtml(User user, WebHelper webHelper, Long processId, String name, Object object, RenderParameters renderParameters) {
+        renderParameters.setDisplayType(DisplayType.INLINE);
         WfVariable variable = new WfVariable(name, object);
         return getHtml(user, webHelper, variable, true);
     }

@@ -1,8 +1,8 @@
 package ru.runa.wfe.var.format;
 
-
 import ru.runa.wfe.commons.web.WebHelper;
 import ru.runa.wfe.user.User;
+import ru.runa.wfe.var.dto.RenderParameters;
 
 /**
  * Provides a way to customize a variable display.
@@ -14,6 +14,6 @@ public interface VariableDisplaySupport {
     /**
      * Generates HTML for variable value display.
      */
-    public String formatHtml(User user, WebHelper webHelper, Long processId, String name, Object object);
+    public String formatHtml(User user, WebHelper webHelper, Long processId, String name, Object object, RenderParameters renderParameters);
 
 }

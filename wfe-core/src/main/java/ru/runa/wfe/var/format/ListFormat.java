@@ -9,6 +9,8 @@ import ru.runa.wfe.commons.TypeConversionUtil;
 import ru.runa.wfe.commons.web.WebHelper;
 import ru.runa.wfe.user.User;
 import ru.runa.wfe.var.UserType;
+import ru.runa.wfe.var.dto.RenderParameters;
+import ru.runa.wfe.var.dto.RenderParameters.DisplayType;
 
 import com.google.common.collect.Lists;
 
@@ -99,7 +101,8 @@ public class ListFormat extends VariableFormat implements VariableFormatContaine
     }
 
     @Override
-    public String formatHtml(User user, WebHelper webHelper, Long processId, String name, Object object) {
+    public String formatHtml(User user, WebHelper webHelper, Long processId, String name, Object object, RenderParameters renderParameters) {
+        renderParameters.setDisplayType(DisplayType.BLOCK);
         List<Object> list = (List<Object>) object;
         StringBuffer b = new StringBuffer();
         b.append("<table class=\"list\">");
@@ -111,7 +114,7 @@ public class ListFormat extends VariableFormat implements VariableFormatContaine
             String value;
             if (componentFormat instanceof VariableDisplaySupport) {
                 String componentName = name + COMPONENT_QUALIFIER_START + i + COMPONENT_QUALIFIER_END;
-                value = ((VariableDisplaySupport) componentFormat).formatHtml(user, webHelper, processId, componentName, o);
+                value = ((VariableDisplaySupport) componentFormat).formatHtml(user, webHelper, processId, componentName, o, new RenderParameters());
             } else {
                 value = componentFormat.format(o);
             }

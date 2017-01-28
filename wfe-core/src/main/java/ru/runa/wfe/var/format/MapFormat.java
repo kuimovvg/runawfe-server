@@ -10,6 +10,8 @@ import ru.runa.wfe.commons.TypeConversionUtil;
 import ru.runa.wfe.commons.web.WebHelper;
 import ru.runa.wfe.user.User;
 import ru.runa.wfe.var.UserType;
+import ru.runa.wfe.var.dto.RenderParameters;
+import ru.runa.wfe.var.dto.RenderParameters.DisplayType;
 
 import com.google.common.collect.Maps;
 
@@ -112,7 +114,8 @@ public class MapFormat extends VariableFormat implements VariableFormatContainer
     }
 
     @Override
-    public String formatHtml(User user, WebHelper webHelper, Long processId, String name, Object map) {
+    public String formatHtml(User user, WebHelper webHelper, Long processId, String name, Object map, RenderParameters renderParameters) {
+        renderParameters.setDisplayType(DisplayType.BLOCK);
         if (map == null) {
             return "";
         }
@@ -125,7 +128,7 @@ public class MapFormat extends VariableFormat implements VariableFormatContainer
             String value;
             Object keyValue = TypeConversionUtil.convertTo(keyFormat.getJavaClass(), entry.getKey());
             if (keyFormat instanceof VariableDisplaySupport) {
-                value = ((VariableDisplaySupport) keyFormat).formatHtml(user, webHelper, processId, name, keyValue);
+                value = ((VariableDisplaySupport) keyFormat).formatHtml(user, webHelper, processId, name, keyValue, new RenderParameters());
             } else {
                 value = keyFormat.format(keyValue);
             }
@@ -134,7 +137,7 @@ public class MapFormat extends VariableFormat implements VariableFormatContainer
             Object valueValue = TypeConversionUtil.convertTo(valueFormat.getJavaClass(), entry.getValue());
             if (valueFormat instanceof VariableDisplaySupport) {
                 String componentName = name + COMPONENT_QUALIFIER_START + keyFormat.format(keyValue) + COMPONENT_QUALIFIER_END;
-                value = ((VariableDisplaySupport) valueFormat).formatHtml(user, webHelper, processId, componentName, valueValue);
+                value = ((VariableDisplaySupport) valueFormat).formatHtml(user, webHelper, processId, componentName, valueValue, new RenderParameters());
             } else {
                 value = valueFormat.format(valueValue);
             }

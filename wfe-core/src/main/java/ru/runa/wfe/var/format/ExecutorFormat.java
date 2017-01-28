@@ -17,6 +17,8 @@ import ru.runa.wfe.user.Group;
 import ru.runa.wfe.user.User;
 import ru.runa.wfe.var.IVariableProvider;
 import ru.runa.wfe.var.MapVariableProvider;
+import ru.runa.wfe.var.dto.RenderParameters;
+import ru.runa.wfe.var.dto.RenderParameters.DisplayType;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.Maps;
@@ -72,7 +74,8 @@ public class ExecutorFormat extends VariableFormat implements VariableDisplaySup
     }
 
     @Override
-    public String formatHtml(User user, WebHelper webHelper, Long processId, String name, Object object) {
+    public String formatHtml(User user, WebHelper webHelper, Long processId, String name, Object object, RenderParameters renderParameters) {
+        renderParameters.setDisplayType(DisplayType.INLINE);
         Executor executor = (Executor) object;
         boolean link = false;
         try {

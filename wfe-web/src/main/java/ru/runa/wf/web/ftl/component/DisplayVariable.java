@@ -1,6 +1,8 @@
 package ru.runa.wf.web.ftl.component;
 
 import ru.runa.wfe.commons.ftl.FormComponent;
+import ru.runa.wfe.var.dto.RenderParameters;
+import ru.runa.wfe.var.dto.RenderParameters.DisplayType;
 import ru.runa.wfe.var.dto.WfVariable;
 
 public class DisplayVariable extends FormComponent {
@@ -11,13 +13,22 @@ public class DisplayVariable extends FormComponent {
         String variableName = getParameterAsString(0);
         boolean componentView = getParameterAs(boolean.class, 1);
         WfVariable variable = variableProvider.getVariableNotNull(variableName);
-        String html = "<div class=\"displayVariable " + variable.getDefinition().getScriptingNameWithoutDots() + "\">";
+        String componentHtml;
+
+        RenderParameters renderParameters = new RenderParameters();
         if (componentView) {
-            html += ViewUtil.getComponentOutput(user, webHelper, variableProvider.getProcessId(), variable);
+            componentHtml = ViewUtil.getComponentOutput(user, webHelper, variableProvider.getProcessId(), variable);
         } else {
-            html += ViewUtil.getOutput(user, webHelper, variableProvider.getProcessId(), variable);
+            componentHtml = ViewUtil.getOutput(user, webHelper, variableProvider.getProcessId(), variable);
         }
-        html += "</div>";
+
+        String tag = "span";
+        if (renderParameters.getDisplayType().equals(DisplayType.BLOCK)) {
+            tag = "div";
+        }
+        String html = "<" + tag + " class=\"displayVariable " + variable.getDefinition().getScriptingNameWithoutDots() + "\">";
+        html += componentHtml;
+        html += "</" + tag + ">";
         return html;
     }
 }

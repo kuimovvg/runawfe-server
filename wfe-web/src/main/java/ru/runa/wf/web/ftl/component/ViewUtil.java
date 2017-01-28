@@ -35,6 +35,8 @@ import ru.runa.wfe.var.IVariableProvider;
 import ru.runa.wfe.var.UserType;
 import ru.runa.wfe.var.UserTypeMap;
 import ru.runa.wfe.var.VariableDefinition;
+import ru.runa.wfe.var.dto.RenderParameters;
+import ru.runa.wfe.var.dto.RenderParameters.DisplayType;
 import ru.runa.wfe.var.dto.WfVariable;
 import ru.runa.wfe.var.file.IFileVariable;
 import ru.runa.wfe.var.format.ActorFormat;
@@ -219,8 +221,8 @@ public class ViewUtil {
     }
 
     @SuppressWarnings("unchecked")
-    public static final String getUserTypeListTable(User user, WebHelper webHelper, WfVariable variable, WfVariable dectSelectVariable,
-            Long processId, String sortFieldName, boolean isMultiDim) {
+    public static final String getUserTypeListTable(User user, WebHelper webHelper, WfVariable variable, WfVariable dectSelectVariable, Long processId,
+            String sortFieldName, boolean isMultiDim) {
         if (!(variable.getValue() instanceof List)) {
             return "";
         }
@@ -272,6 +274,10 @@ public class ViewUtil {
     }
 
     public static String getComponentInput(User user, WebHelper webHelper, WfVariable variable) {
+        return getComponentInput(user, webHelper, variable, new RenderParameters());
+    }
+
+    public static String getComponentInput(User user, WebHelper webHelper, WfVariable variable, RenderParameters renderParameters) {
         String variableName = variable.getDefinition().getName();
         VariableFormat variableFormat = variable.getDefinition().getFormatNotNull();
         Object value = variable.getValue();
@@ -279,25 +285,27 @@ public class ViewUtil {
             return ((VariableInputSupport) variableFormat).getInputHtml(user, webHelper, variable);
         }
         if (StringFormat.class == variableFormat.getClass()) {
+            renderParameters.setDisplayType(DisplayType.INLINE);
             String html = "";
             html += "<input type=\"text\" name=\"" + variableName + "\" class=\"inputString\" ";
             if (value != null) {
-                html += "value=\"" + ((StringFormat) variableFormat).formatHtml(user, webHelper, 0L, variableName, value) + "\" ";
+                html += "value=\"" + ((StringFormat) variableFormat).formatHtml(user, webHelper, 0L, variableName, value, new RenderParameters()) + "\" ";
             }
             html += "/>";
             return html;
         }
         if (TextFormat.class == variableFormat.getClass()) {
+            renderParameters.setDisplayType(DisplayType.INLINE);
             String html = "";
             html += "<textarea name=\"" + variableName + "\" class=\"inputText\">";
             if (value != null) {
-                html += ((TextFormat) variableFormat).formatHtml(user, webHelper, 0L, variableName, value);
+                html += ((TextFormat) variableFormat).formatHtml(user, webHelper, 0L, variableName, value, new RenderParameters());
             }
             html += "</textarea>";
             return html;
         }
-        if (variableFormat instanceof LongFormat || DoubleFormat.class == variableFormat.getClass()
-                || BigDecimalFormat.class == variableFormat.getClass()) {
+        if (variableFormat instanceof LongFormat || DoubleFormat.class == variableFormat.getClass() || BigDecimalFormat.class == variableFormat.getClass()) {
+            renderParameters.setDisplayType(DisplayType.INLINE);
             String html = "";
             html += "<input type=\"text\" name=\"" + variableName + "\" class=\"inputNumber\" ";
             if (value instanceof Number) {
@@ -307,9 +315,11 @@ public class ViewUtil {
             return html;
         }
         if (FileFormat.class == variableFormat.getClass()) {
+            renderParameters.setDisplayType(DisplayType.BLOCK);
             return getFileComponent(webHelper, variableName, (IFileVariable) value, true);
         }
         if (BooleanFormat.class == variableFormat.getClass()) {
+            renderParameters.setDisplayType(DisplayType.INLINE);
             String html = "";
             html += "<input type=\"checkbox\" name=\"" + variableName + "\" class=\"inputBoolean\" ";
             if (value instanceof Boolean && (Boolean) value) {
@@ -319,6 +329,7 @@ public class ViewUtil {
             return html;
         }
         if (DateFormat.class == variableFormat.getClass()) {
+            renderParameters.setDisplayType(DisplayType.INLINE);
             String html = "";
             html += "<input type=\"text\" name=\"" + variableName + "\" class=\"inputDate\" style=\"width: 100px;\" ";
             if (value instanceof Date) {
@@ -328,6 +339,7 @@ public class ViewUtil {
             return html;
         }
         if (TimeFormat.class == variableFormat.getClass()) {
+            renderParameters.setDisplayType(DisplayType.INLINE);
             String html = "";
             html += "<input type=\"text\" name=\"" + variableName + "\" class=\"inputTime\" style=\"width: 50px;\" ";
             if (value instanceof Date) {
@@ -337,6 +349,7 @@ public class ViewUtil {
             return html;
         }
         if (DateTimeFormat.class == variableFormat.getClass()) {
+            renderParameters.setDisplayType(DisplayType.INLINE);
             String html = "";
             html += "<input type=\"text\" name=\"" + variableName + "\" class=\"inputDateTime\" style=\"width: 150px;\" ";
             if (value instanceof Date) {
@@ -346,9 +359,11 @@ public class ViewUtil {
             return html;
         }
         if (variableFormat instanceof ExecutorFormat) {
+            renderParameters.setDisplayType(DisplayType.INLINE);
             return ViewUtil.createExecutorSelect(user, variableName, variableFormat, value, true);
         }
         if (variableFormat instanceof UserTypeFormat) {
+            renderParameters.setDisplayType(DisplayType.BLOCK);
             UserType userType = ((UserTypeFormat) variableFormat).getUserType();
             UserTypeMap userTypeMap = (UserTypeMap) value;
             if (userTypeMap == null) {
@@ -370,13 +385,14 @@ public class ViewUtil {
             return b.toString();
         }
         if (variableFormat instanceof ListFormat) {
+            renderParameters.setDisplayType(DisplayType.BLOCK);
             String scriptingVariableName = variable.getDefinition().getScriptingNameWithoutDots();
             VariableFormat componentFormat = FormatCommons.createComponent(variable, 0);
             Map<String, String> substitutions = new HashMap<String, String>();
             substitutions.put("VARIABLE", variableName);
             substitutions.put("UNIQUENAME", scriptingVariableName);
             WfVariable templateComponentVariable = ViewUtil.createListComponentVariable(variable, -1, componentFormat, null);
-            String componentHtml = ViewUtil.getComponentInput(user, webHelper, templateComponentVariable);
+            String componentHtml = ViewUtil.getComponentInput(user, webHelper, templateComponentVariable, new RenderParameters());
             componentHtml = componentHtml.replaceAll("\"", "'").replaceAll("\t", "").replaceAll("\n", "");
             substitutions.put("COMPONENT_INPUT", componentHtml);
             substitutions.put("COMPONENT_JS_HANDLER", ViewUtil.getComponentJSFunction(variable));
@@ -394,7 +410,7 @@ public class ViewUtil {
                 Object o = list.get(row);
                 html.append("<div><div current row=\"").append(row).append("\" name=\"").append(variableName).append("\">");
                 WfVariable componentVariable = ViewUtil.createListComponentVariable(variable, row, componentFormat, o);
-                html.append(ViewUtil.getComponentInput(user, webHelper, componentVariable));
+                html.append(ViewUtil.getComponentInput(user, webHelper, componentVariable, new RenderParameters()));
                 html.append("<input type='button' value=' - ' onclick=\"remove").append(scriptingVariableName);
                 html.append("(this);\" style=\"width: 30px;\" />");
                 html.append("</div></div>");
@@ -405,6 +421,7 @@ public class ViewUtil {
             return html.toString();
         }
         if (variableFormat instanceof MapFormat) {
+            renderParameters.setDisplayType(DisplayType.BLOCK);
             String scriptingVariableName = variable.getDefinition().getScriptingNameWithoutDots();
             Map<String, String> substitutions = new HashMap<String, String>();
             substitutions.put("VARIABLE", variableName);
@@ -452,31 +469,44 @@ public class ViewUtil {
     }
 
     public static String getComponentOutput(User user, WebHelper webHelper, Long processId, WfVariable variable) {
+        return getComponentOutput(user, webHelper, processId, variable, new RenderParameters());
+    }
+
+    public static String getComponentOutput(User user, WebHelper webHelper, Long processId, WfVariable variable, RenderParameters renderParameters) {
         String variableName = variable.getDefinition().getName();
         VariableFormat variableFormat = variable.getDefinition().getFormatNotNull();
         Object value = variable.getValue();
+
+        if (renderParameters == null) {
+            renderParameters = new RenderParameters();
+        }
+
         if (FileFormat.class == variableFormat.getClass()) {
             // because component is not usable
+            renderParameters.setDisplayType(DisplayType.BLOCK);
             return getFileComponent(webHelper, variableName, (IFileVariable) value, false);
         }
         if (StringFormat.class == variableFormat.getClass()) {
+            renderParameters.setDisplayType(DisplayType.INLINE);
             String html = "<input type=\"text\" name=\"" + variableName + "\" class=\"inputString\" disabled=\"true\" ";
             if (value != null) {
-                html += "value=\"" + ((StringFormat) variableFormat).formatHtml(user, webHelper, processId, variableName, value) + "\" ";
+                html += "value=\"" + ((StringFormat) variableFormat).formatHtml(user, webHelper, processId, variableName, value, new RenderParameters())
+                        + "\" ";
             }
             html += "/>";
             return html;
         }
         if (TextFormat.class == variableFormat.getClass()) {
+            renderParameters.setDisplayType(DisplayType.BLOCK);
             String html = "<textarea name=\"" + variableName + "\" class=\"inputText\" disabled=\"true\">";
             if (value != null) {
-                html += ((TextFormat) variableFormat).formatHtml(user, webHelper, processId, variableName, value);
+                html += ((TextFormat) variableFormat).formatHtml(user, webHelper, processId, variableName, value, new RenderParameters());
             }
             html += "</textarea>";
             return html;
         }
-        if (variableFormat instanceof LongFormat || DoubleFormat.class == variableFormat.getClass()
-                || BigDecimalFormat.class == variableFormat.getClass()) {
+        if (variableFormat instanceof LongFormat || DoubleFormat.class == variableFormat.getClass() || BigDecimalFormat.class == variableFormat.getClass()) {
+            renderParameters.setDisplayType(DisplayType.INLINE);
             String html = "<input type=\"text\" name=\"" + variableName + "\" class=\"inputNumber\" disabled=\"true\" ";
             if (value instanceof Number) {
                 html += "value=\"" + value + "\" ";
@@ -485,6 +515,7 @@ public class ViewUtil {
             return html;
         }
         if (BooleanFormat.class == variableFormat.getClass()) {
+            renderParameters.setDisplayType(DisplayType.INLINE);
             String html = "<input type=\"checkbox\" name=\"" + variableName + "\" class=\"inputBoolean\" disabled=\"true\" ";
             if (value instanceof Boolean && (Boolean) value) {
                 html += "checked=\"checked\" ";
@@ -493,6 +524,7 @@ public class ViewUtil {
             return html;
         }
         if (DateFormat.class == variableFormat.getClass()) {
+            renderParameters.setDisplayType(DisplayType.INLINE);
             String html = "<input type=\"text\" name=\"" + variableName + "\" class=\"inputDate\" style=\"width: 100px;\" disabled=\"true\" ";
             if (value instanceof Date) {
                 html += "value=\"" + CalendarUtil.formatDate((Date) value) + "\" ";
@@ -501,6 +533,7 @@ public class ViewUtil {
             return html;
         }
         if (TimeFormat.class == variableFormat.getClass()) {
+            renderParameters.setDisplayType(DisplayType.INLINE);
             String html = "<input type=\"text\" name=\"" + variableName + "\" class=\"inputTime\" style=\"width: 50px;\" disabled=\"true\" ";
             if (value instanceof Date) {
                 html += "value=\"" + CalendarUtil.formatTime((Date) value) + "\" ";
@@ -509,6 +542,7 @@ public class ViewUtil {
             return html;
         }
         if (DateTimeFormat.class == variableFormat.getClass()) {
+            renderParameters.setDisplayType(DisplayType.INLINE);
             String html = "<input type=\"text\" name=\"" + variableName + "\" class=\"inputDateTime\" style=\"width: 150px;\" disabled=\"true\" ";
             if (value instanceof Date) {
                 html += "value=\"" + CalendarUtil.formatDateTime((Date) value) + "\" ";
@@ -517,9 +551,11 @@ public class ViewUtil {
             return html;
         }
         if (variableFormat instanceof ExecutorFormat) {
+            renderParameters.setDisplayType(DisplayType.INLINE);
             return ViewUtil.createExecutorSelect(user, variableName, variableFormat, value, false);
         }
         if (variableFormat instanceof UserTypeFormat) {
+            renderParameters.setDisplayType(DisplayType.BLOCK);
             UserTypeMap userTypeMap = (UserTypeMap) value;
             UserType userType = ((UserTypeFormat) variableFormat).getUserType();
             StringBuffer b = new StringBuffer();
@@ -530,7 +566,7 @@ public class ViewUtil {
                 b.append("<td class=\"list\">");
                 Object attributeValue = userTypeMap.get(attributeDefinition.getName());
                 WfVariable componentVariable = createUserTypeComponentVariable(variable, attributeDefinition, attributeValue);
-                b.append(getComponentOutput(user, webHelper, processId, componentVariable));
+                b.append(getComponentOutput(user, webHelper, processId, componentVariable, new RenderParameters()));
                 b.append("</td>");
                 b.append("</tr>");
             }
@@ -538,6 +574,7 @@ public class ViewUtil {
             return b.toString();
         }
         if (variableFormat instanceof ListFormat) {
+            renderParameters.setDisplayType(DisplayType.BLOCK);
             VariableFormat componentFormat = FormatCommons.createComponent(variable.getDefinition(), 0);
             StringBuffer html = new StringBuffer();
             List<Object> list = TypeConversionUtil.convertTo(List.class, value);
@@ -547,7 +584,7 @@ public class ViewUtil {
                     Object listValue = list.get(row);
                     html.append("<div row=\"").append(row).append("\" name=\"").append(variableName).append("\">");
                     WfVariable componentVariable = createListComponentVariable(variable, row, componentFormat, listValue);
-                    html.append(ViewUtil.getComponentOutput(user, webHelper, processId, componentVariable));
+                    html.append(ViewUtil.getComponentOutput(user, webHelper, processId, componentVariable, new RenderParameters()));
                     html.append("</div>");
                 }
             }
@@ -555,6 +592,7 @@ public class ViewUtil {
             return html.toString();
         }
         if (variableFormat instanceof MapFormat) {
+            renderParameters.setDisplayType(DisplayType.BLOCK);
             StringBuffer html = new StringBuffer();
             Map<Object, Object> map = TypeConversionUtil.convertTo(Map.class, value);
             html.append("<div class=\"viewList\" id=\"").append(variable.getDefinition().getScriptingName()).append("\">");
@@ -566,10 +604,10 @@ public class ViewUtil {
                     html.append("<tr><td class=\"list\">");
                     html.append("<div row=\"").append(row).append("\" name=\"").append(variableName).append("\">");
                     WfVariable keyComponentVariable = ViewUtil.createMapKeyComponentVariable(variable, row, key);
-                    html.append(ViewUtil.getComponentOutput(user, webHelper, processId, keyComponentVariable));
+                    html.append(ViewUtil.getComponentOutput(user, webHelper, processId, keyComponentVariable, new RenderParameters()));
                     html.append("</td><td class=\"list\">");
                     WfVariable valueComponentVariable = ViewUtil.createMapValueComponentVariable(variable, row, key);
-                    html.append(ViewUtil.getComponentOutput(user, webHelper, processId, valueComponentVariable));
+                    html.append(ViewUtil.getComponentOutput(user, webHelper, processId, valueComponentVariable, new RenderParameters()));
                     html.append("</td></div></tr>");
                 }
             }
@@ -579,15 +617,15 @@ public class ViewUtil {
         }
         if (variableFormat instanceof VariableDisplaySupport) {
             VariableDisplaySupport displaySupport = (VariableDisplaySupport) variableFormat;
-            return displaySupport.formatHtml(user, webHelper, processId, variable.getDefinition().getName(), variable.getValue());
+            return displaySupport.formatHtml(user, webHelper, processId, variable.getDefinition().getName(), variable.getValue(), renderParameters);
         }
         throw new InternalApplicationException("No output method implemented for " + variableFormat);
     }
 
     public static String getComponentJSFunction(WfVariable variable) {
         VariableFormat variableFormat = variable.getDefinition().getFormatNotNull();
-        if (DateFormat.class == variableFormat.getClass() || TimeFormat.class == variableFormat.getClass()
-                || DateTimeFormat.class == variableFormat.getClass() || FileFormat.class == variableFormat.getClass()) {
+        if (DateFormat.class == variableFormat.getClass() || TimeFormat.class == variableFormat.getClass() || DateTimeFormat.class == variableFormat.getClass()
+                || FileFormat.class == variableFormat.getClass()) {
             return getComponentJSFunction(variableFormat);
         }
         if (ListFormat.class == variableFormat.getClass()) {
@@ -653,22 +691,29 @@ public class ViewUtil {
     }
 
     public static String getOutput(User user, WebHelper webHelper, Long processId, WfVariable variable) {
+        return getOutput(user, webHelper, processId, variable, new RenderParameters());
+    }
+
+    public static String getOutput(User user, WebHelper webHelper, Long processId, WfVariable variable, RenderParameters renderParameters) {
         try {
             if (variable.getValue() == null) {
                 return "";
             }
             VariableFormat format = variable.getDefinition().getFormatNotNull();
             if (format instanceof HiddenFormat) {
+                renderParameters.setDisplayType(DisplayType.INLINE);
                 // display in admin interface
                 return format.format(variable.getValue());
             }
             if (format instanceof VariableDisplaySupport) {
                 VariableDisplaySupport displaySupport = (VariableDisplaySupport) format;
-                return displaySupport.formatHtml(user, webHelper, processId, variable.getDefinition().getName(), variable.getValue());
+                return displaySupport.formatHtml(user, webHelper, processId, variable.getDefinition().getName(), variable.getValue(), renderParameters);
             } else {
+                renderParameters.setDisplayType(DisplayType.INLINE);
                 return format.format(variable.getValue());
             }
         } catch (Exception e) {
+            renderParameters.setDisplayType(DisplayType.INLINE);
             log.warn("Unable to format value " + variable + " in " + processId + ": " + e.getMessage());
             if (variable.getValue() != null && variable.getValue().getClass().isArray()) {
                 return Arrays.toString((Object[]) variable.getValue());

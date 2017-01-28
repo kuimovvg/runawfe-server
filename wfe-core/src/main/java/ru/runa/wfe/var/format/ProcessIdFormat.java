@@ -6,6 +6,8 @@ import ru.runa.wfe.commons.web.WebHelper;
 import ru.runa.wfe.execution.dto.WfProcess;
 import ru.runa.wfe.security.AuthorizationException;
 import ru.runa.wfe.user.User;
+import ru.runa.wfe.var.dto.RenderParameters;
+import ru.runa.wfe.var.dto.RenderParameters.DisplayType;
 
 import com.google.common.collect.Maps;
 
@@ -17,7 +19,8 @@ public class ProcessIdFormat extends LongFormat implements VariableDisplaySuppor
     }
 
     @Override
-    public String formatHtml(User user, WebHelper webHelper, Long currentProcessId, String name, Object object) {
+    public String formatHtml(User user, WebHelper webHelper, Long currentProcessId, String name, Object object, RenderParameters renderParameters) {
+        renderParameters.setDisplayType(DisplayType.INLINE);
         Long processId = (Long) object;
         try {
             WfProcess process = webHelper.getProcess(user, processId);

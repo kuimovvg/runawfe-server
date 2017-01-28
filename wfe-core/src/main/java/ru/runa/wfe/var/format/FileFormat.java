@@ -27,6 +27,8 @@ import org.json.simple.JSONValue;
 import ru.runa.wfe.InternalApplicationException;
 import ru.runa.wfe.commons.web.WebHelper;
 import ru.runa.wfe.user.User;
+import ru.runa.wfe.var.dto.RenderParameters;
+import ru.runa.wfe.var.dto.RenderParameters.DisplayType;
 import ru.runa.wfe.var.file.FileVariable;
 import ru.runa.wfe.var.file.IFileVariable;
 
@@ -86,7 +88,9 @@ public class FileFormat extends VariableFormat implements VariableDisplaySupport
     }
 
     @Override
-    public String formatHtml(User user, WebHelper webHelper, Long processId, String name, Object object) {
+    public String formatHtml(User user, WebHelper webHelper, Long processId, String name, Object object, RenderParameters renderParameters) {
+        renderParameters.setDisplayType(DisplayType.INLINE);
+
         if (object == null) {
             return "&nbsp;";
         }
